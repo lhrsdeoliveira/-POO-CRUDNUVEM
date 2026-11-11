@@ -1,0 +1,188 @@
+package ProjetoProduto;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Scanner;
+
+public class Produto {
+
+    public static void main(String[] args) {
+
+        // CONEXAO COM O MYSQL DO RAILWAY
+        String url = "jdbc:mysql://gondola.proxy.rlwy.net:52074/railway";
+
+        String usuariobanco = "root";
+
+        // Senha configurada no Eclipse
+        String bancosenha = System.getenv("RAILWAY_PASSWORD");
+
+        if (bancosenha == null || bancosenha.isEmpty()) {
+            System.out.println("ERRO: Configure RAILWAY_PASSWORD no Eclipse.");
+            return;
+        }
+
+        try (Scanner sc = new Scanner(System.in);
+             Connection conexao = DriverManager.getConnection(
+                     url, usuariobanco, bancosenha)) {
+
+            System.out.println("Conectado ao Railway com sucesso!");
+
+            int opcao = -1;
+
+            while (opcao != 0) {
+
+                System.out.println("\n===== CRUD PRODUTO =====");
+                System.out.println("1 - Inserir produto");
+                System.out.println("2 - Consultar produto");
+                System.out.println("3 - Atualizar preco");
+                System.out.println("4 - Deletar produto");
+                System.out.println("0 - Sair");
+                System.out.print("Escolha uma opcao: ");
+
+                opcao = sc.nextInt();
+
+                switch (opcao) {
+
+                    case 1:
+                        System.out.print("Codigo do produto: ");
+                        int codigo = sc.nextInt();
+
+                        System.out.print("Nome do produto: ");
+                        String nome = sc.next();
+
+                        System.out.print("Preco do produto: ");
+                        double preco = sc.nextDouble();
+
+                        String sql = "INSERT INTO PRODUTO "
+                                + "(CODIGO, NOME, PRECO) VALUES (?, ?, ?)";
+
+                        try (PreparedStatement stmt =
+                                conexao.prepareStatement(sql)) {
+
+                            stmt.setInt(1, codigo);
+                            stmt.setString(2, nome);
+                            stmt.setDouble(3, preco);
+
+                            stmt.executeUpdate();
+
+                            System.out.println(
+                                    "Produto cadastrado com sucesso!");
+
+                        } catch (SQLException e) {
+                            System.out.println(
+                                    "Erro ao cadastrar: " + e.getMessage());
+                        }
+                        break;
+
+                    case 2:
+                        System.out.print("Codigo do produto: ");
+                        int codigo2 = sc.nextInt();
+
+                        String sql2 = "SELECT * FROM PRODUTO "
+                                + "WHERE CODIGO = ?";
+
+                        try (PreparedStatement stmt2 =
+                                conexao.prepareStatement(sql2)) {
+
+                            stmt2.setInt(1, codigo2);
+
+                            try (ResultSet rs = stmt2.executeQuery()) {
+
+                                if (rs.next()) {
+                                    System.out.println(
+                                            "Codigo: " + rs.getInt("CODIGO"));
+                                    System.out.println(
+                                            "Nome: " + rs.getString("NOME"));
+                                    System.out.println(
+                                            "Preco: R$ " + rs.getDouble("PRECO"));
+                                } else {
+                                    System.out.println(
+                                            "Produto nao encontrado.");
+                                }
+                            }
+
+                        } catch (SQLException e) {
+                            System.out.println(
+                                    "Erro na consulta: " + e.getMessage());
+                        }
+                        break;
+
+                    case 3:
+                        System.out.print(
+                                "Codigo do produto para atualizar: ");
+                        int codPesquisa = sc.nextInt();
+
+                        System.out.print("Novo preco: ");
+                        double novoPreco = sc.nextDouble();
+
+                        String sqlUpd = "UPDATE PRODUTO SET PRECO = ? "
+                                + "WHERE CODIGO = ?";
+
+                        try (PreparedStatement stmtUp =
+                                conexao.prepareStatement(sqlUpd)) {
+
+                            stmtUp.setDouble(1, novoPreco);
+                            stmtUp.setInt(2, codPesquisa);
+
+                            int linhas = stmtUp.executeUpdate();
+
+                            if (linhas > 0) {
+                                System.out.println(
+                                        "Preco atualizado com sucesso!");
+                            } else {
+                                System.out.println(
+                                        "Produto nao localizado.");
+                            }
+
+                        } catch (SQLException e) {
+                            System.out.println(
+                                    "Erro ao atualizar: " + e.getMessage());
+                        }
+                        break;
+
+                    case 4:
+                        System.out.print(
+                                "Codigo do produto para deletar: ");
+                        int codDelete = sc.nextInt();
+
+                        String sqlDel = "DELETE FROM PRODUTO "
+                                + "WHERE CODIGO = ?";
+
+                        try (PreparedStatement stmtDel =
+                                conexao.prepareStatement(sqlDel)) {
+
+                            stmtDel.setInt(1, codDelete);
+
+                            int linhas = stmtDel.executeUpdate();
+
+                            if (linhas > 0) {
+                                System.out.println(
+                                        "Produto deletado com sucesso!");
+                            } else {
+                                System.out.println(
+                                        "Produto nao localizado.");
+                            }
+
+                        } catch (SQLException e) {
+                            System.out.println(
+                                    "Erro ao deletar: " + e.getMessage());
+                        }
+                        break;
+
+                    case 0:
+                        System.out.println("Programa encerrado.");
+                        break;
+
+                    default:
+                        System.out.println("Opcao invalida!");
+                }
+            }
+
+        } catch (Exception e) {
+            System.out.println(
+                    "Erro de conexao: " + e.getMessage());
+        }
+    }
+}
